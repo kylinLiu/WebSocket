@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>WebSocket入门教程（三）-- WebSocket实例：实时获取服务器内存使用情况</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/4.0.0-alpha.2/css/bootstrap.css">
+    <link rel="stylesheet" href="http://cdn.bootcss.com/tether/1.3.2/css/tether.css"/>
+    <script src="http://cdn.bootcss.com/jquery/2.2.4/jquery.js" ></script>
+    <script src="http://cdn.bootcss.com/tether/1.3.2/js/tether.js"></script>
+    <script src="http://cdn.bootcss.com/bootstrap/4.0.0-alpha.2/js/bootstrap.js"></script>
+    <script>
+    // code from chapter goes here
+        $(function() {
+                //alert("xxx");
+                var ws = new WebSocket("ws://www.liumumu.top:8181");
+
+                var mem = {"total": 0,
+                          "used": 0,
+                          "free": 0,
+                          "buffers": 0,
+                          "cached": 0};
+
+                ws.onopen = function(e){
+                        console.log("Connection established");
+
+                };
+
+                var changeMemEntry = function(field,originalValue,newValue){
+                        var valElem = $('#' + field + ' span');    
+                        valElem.html(newValue);
+                        if(originalValue == 0){
+                                return;
+                        }
+                        if(field =="free"){
+                                if(newValue < originalValue){
+                                        valElem.addClass('label-danger');
+                                        valElem.removeClass('label-success');
+                                }else if(newValue>originalValue){
+                                        valElem.addClass('label-success');
+                                        valElem.removeClass('label-danger');
+                                }
+                        }else{
+                                if(newValue > originalValue){
+                                        valElem.addClass('label-danger');
+                                        valElem.removeClass('label-success');
+                                }else if(newValue<originalValue){
+                                        valElem.addClass('label-success');
+                                        valElem.removeClass('label-danger');
+                                }
+                        }
+
+                }
+                ws.onmessage = function(e){
+                        var memData = JSON.parse(e.data);
+                        //console.log("onmessage",memData);
+                        for(var field in memData){
+                                if(memData.hasOwnProperty(field)){
+                          
+                                        changeMemEntry(field,mem[field],memData[field]);
+                                        mem[field] = memData[field];
+                                }
+                        }
+                }
+                ws.onerror = function(e){
+                        console.log("WebSocket failure,error",e);
+                        //handleErrors(e);
+                }
+                ws.onclose = function(e){
+                        console.log(e);
+                        console.log(e.reason+" "+e.code);
+                        for(var field in mem){
+                                if(mem.hasOwnProperty(field)){
+                                        mem[field] = 0;
+				}
+                        }
+                }
+
+
+        });
+    </script>
+    <style>
+        html,body{
+                height:100%;
+
+        }
+    </style>
+</head>
+<body lang="cn">
+    <div class="vertical-center">
+        <div class="container">
+            <h1 style="text-align:center;padding:5px;">柳木木ECS概况</h1>
+            <table class="table" id="memTable">
+            <thead>
+                <tr>
+                <th>类型</th>
+                <th>大小(KB)</th>
+                </tr>
+            </thead>
+            <tbody id="memRows">
+            <tr>
+                <td><h3>内存总量</h3></td>
+                <td id="total">
+                <h3><span class="label label-default label-success">0.00</span></h3>
+                </td>
+            </tr>
+            <tr>
+                <td><h3>已使用内存</h3></td>
+                <td id="used">
+                <h3><span class="label label-default label-success">0.00</span></h3>
+                </td>
+            </tr>
+            <tr>
+                <td><h3>闲置内存</h3></td>
+                <td id="free">
+                <h3><span class="label label-default label-success">0.00</span></h3>
+                </td>
+            </tr>
+            <tr>
+                <td><h3>写缓存</h3></td>
+                <td id="buffers">
+                <h3><span class="label label-default label-success">0.00</span></h3>
+                </td>
+            </tr>
+            <tr>                
+	        <td><h3>读缓存</h3></td>
+                <td id="cached">
+                <h3><span class="label label-default label-success">0.00</span></h3>
+                </td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+
